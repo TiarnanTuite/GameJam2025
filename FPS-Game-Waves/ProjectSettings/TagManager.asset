@@ -6,6 +6,7 @@ TagManager:
   tags:
   - CinemachineTarget
   - Floor
+  - ground
   layers:
   - Default
   - TransparentFX
