@@ -1,31 +1,19 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[System.Serializable]
+// [CreateAssetMenu (fileName = "newgundata", menuName = "Gun/GunController")]
+
 public class GunController : MonoBehaviour
 {
-    [Header("Gun Settings")]
-    public float range = 100f;
-    public float fireRate = 15f; // Rounds per second
-    public int maxAmmo = 30;
-    public float reloadTime = 1.5f;
+    public GunData  gunData; // assign created GunData asset in Inspector
 
-    [Header("Effects")]
-    public ParticleSystem muzzleFlash;
+    // add these scene references so the compiler knows them and you can assign them in Inspector
+    public Camera fpsCam;
+    public Transform gunEnd;
     public GameObject impactEffect;
 
-    [Header("Recoil")]
-    public float recoilAmount = 0.5f;
-    public float recoilRecoverySpeed = 5f;
-
-    [Header("References")]
-    public Camera fpsCam;
-    public Transform gunEnd; // Tip of barrel (optional)
-
-    [Header("Audio")]
-    public AudioClip shootSound;
-    public AudioClip reloadSound;
-    public AudioClip emptySound;
-
+    // remove the duplicated fields moved to GunData
     private AudioSource audioSource;
     private int currentAmmo;
     private float nextTimeToFire = 0f;
@@ -34,7 +22,20 @@ public class GunController : MonoBehaviour
 
     void Start()
     {
-        currentAmmo = maxAmmo;
+        if (gunData == null)
+        {
+            Debug.LogError("[GunController] gunData is not assigned. Create a GunData asset and assign it in the Inspector.");
+            // fallback defaults to avoid further NREs
+            currentAmmo = 30;
+            originalGunPosition = transform.localPosition;
+            if (fpsCam == null) fpsCam = Camera.main;
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+            return;
+        }
+
+        currentAmmo = gunData.maxAmmo;
         originalGunPosition = transform.localPosition;
 
         if (fpsCam == null)
@@ -47,8 +48,11 @@ public class GunController : MonoBehaviour
 
     void Update()
     {
+        if (gunData == null)
+            return; // already logged in Start
+
         // Recover from recoil
-        transform.localPosition = Vector3.Lerp(transform.localPosition, originalGunPosition, Time.deltaTime * recoilRecoverySpeed);
+        transform.localPosition = Vector3.Lerp(transform.localPosition, originalGunPosition, Time.deltaTime * gunData.recoilRecoverySpeed);
 
         if (isReloading)
             return;
@@ -59,20 +63,20 @@ public class GunController : MonoBehaviour
         {
             if (currentAmmo > 0)
             {
-                nextTimeToFire = Time.time + 1f / fireRate;
+                nextTimeToFire = Time.time + 1f / gunData.fireRate;
                 Shoot();
             }
             else
             {
-                if (emptySound != null)
-                    audioSource.PlayOneShot(emptySound);
+                if (gunData.emptySound != null)
+                    audioSource.PlayOneShot(gunData.emptySound);
                 StartReload();
             }
         }
 
         // Reload input
         var keyboard = Keyboard.current;
-        if (keyboard != null && keyboard.rKey.wasPressedThisFrame && currentAmmo < maxAmmo && !isReloading)
+        if (keyboard != null && keyboard.rKey.wasPressedThisFrame && currentAmmo < gunData.maxAmmo && !isReloading)
         {
             StartReload();
         }
@@ -81,69 +85,93 @@ public class GunController : MonoBehaviour
     void Shoot()
     {
         currentAmmo--;
-        Debug.Log($"Shot fired! Ammo remaining: {currentAmmo}/{maxAmmo}");
+        Debug.Log($"Shot fired! Ammo remaining: {currentAmmo}/{gunData.maxAmmo}");
 
         // Play effects
-        if (shootSound != null)
-            audioSource.PlayOneShot(shootSound);
+        if (gunData.shootSound != null)
+            audioSource.PlayOneShot(gunData.shootSound);
 
-        if (muzzleFlash != null)
-            muzzleFlash.Play();
+        if (gunData.muzzleFlash != null)
+            gunData.muzzleFlash.Play();
 
         // Apply recoil
-        transform.localPosition += new Vector3(0, 0, -recoilAmount * 0.1f);
+        transform.localPosition += new Vector3(0, 0, -gunData.recoilAmount * 0.1f);
 
-        // Raycast for hit detection
-        Vector3 shootOrigin = fpsCam.transform.position;
-        Vector3 shootDirection = fpsCam.transform.forward;
+        // Determine spawn origin and direction
+        Vector3 shootOrigin = fpsCam != null ? fpsCam.transform.position : transform.position;
+        Vector3 shootDirection = fpsCam != null ? fpsCam.transform.forward : transform.forward;
 
-        // Use gun end position if available
         if (gunEnd != null)
         {
             shootOrigin = gunEnd.position;
-            shootDirection = (fpsCam.transform.position + fpsCam.transform.forward * range - gunEnd.position).normalized;
+            if (fpsCam != null)
+                shootDirection = (fpsCam.transform.position + fpsCam.transform.forward * gunData.range - gunEnd.position).normalized;
         }
 
-        RaycastHit hit;
-        if (Physics.Raycast(shootOrigin, shootDirection, out hit, range))
+        // If a projectile prefab is assigned, instantiate it and give it velocity.
+        if (gunData.projectilePrefab != null)
         {
-            Debug.Log($"Hit: {hit.transform.name} at distance {hit.distance}");
-
-            // Spawn impact effect
-            if (impactEffect != null)
+            GameObject proj = Instantiate(gunData.projectilePrefab, shootOrigin, Quaternion.LookRotation(shootDirection));
+            Rigidbody rb = proj.GetComponent<Rigidbody>();
+            if (rb != null)
             {
-                GameObject impact = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-                Destroy(impact, 2f);
+                rb.linearVelocity = shootDirection * gunData.projectileSpeed;
             }
-        }
+            else
+            {
+                // if no Rigidbody present, try adding one (optional)
+                rb = proj.AddComponent<Rigidbody>();
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                rb.useGravity = false;
+                rb.linearVelocity = shootDirection * gunData.projectileSpeed;
+            }
 
-        // Debug visualization
-        Debug.DrawRay(shootOrigin, shootDirection * range, Color.red, 1f);
+            Destroy(proj, gunData.projectileLifetime);
+        }
+        else
+        {
+            // Fallback to raycast hit detection if no projectile prefab provided
+            RaycastHit hit;
+            if (Physics.Raycast(shootOrigin, shootDirection, out hit, gunData.range))
+            {
+                Debug.Log($"Hit: {hit.transform.name} at distance {hit.distance}");
+
+                // Spawn impact effect
+                if (impactEffect != null)
+                {
+                    GameObject impact = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                    Destroy(impact, 2f);
+                }
+            }
+
+            // Debug visualization
+            Debug.DrawRay(shootOrigin, shootDirection * gunData.range, Color.red, 1f);
+        }
     }
 
     void StartReload()
     {
-        if (isReloading || currentAmmo == maxAmmo)
+        if (isReloading || currentAmmo == gunData.maxAmmo)
             return;
 
         isReloading = true;
         Debug.Log("Reloading...");
 
-        if (reloadSound != null)
-            audioSource.PlayOneShot(reloadSound);
+        if (gunData.reloadSound != null)
+            audioSource.PlayOneShot(gunData.reloadSound);
 
-        Invoke(nameof(FinishReload), reloadTime);
+        Invoke(nameof(FinishReload), gunData.reloadTime);
     }
 
     void FinishReload()
     {
-        currentAmmo = maxAmmo;
+        currentAmmo = gunData.maxAmmo;
         isReloading = false;
-        Debug.Log($"Reload complete! Ammo: {currentAmmo}/{maxAmmo}");
+        Debug.Log($"Reload complete! Ammo: {currentAmmo}/{gunData.maxAmmo}");
     }
 
     // Public getters for UI
     public int GetCurrentAmmo() => currentAmmo;
-    public int GetMaxAmmo() => maxAmmo;
+    public int GetMaxAmmo() => gunData.maxAmmo;
     public bool IsReloading() => isReloading;
 }
