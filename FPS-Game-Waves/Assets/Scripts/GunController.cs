@@ -111,11 +111,18 @@ public class GunController : MonoBehaviour
         // If a projectile prefab is assigned, instantiate it and give it velocity.
         if (gunData.projectilePrefab != null)
         {
-            GameObject proj = Instantiate(gunData.projectilePrefab, shootOrigin, Quaternion.LookRotation(shootDirection));
+            // Shoot from camera position in camera direction for accuracy
+            Vector3 bulletSpawnPos = fpsCam != null ? fpsCam.transform.position : shootOrigin;
+            Vector3 bulletDirection = fpsCam != null ? fpsCam.transform.forward : shootDirection;
+            
+            // Offset spawn position slightly forward to avoid hitting player
+            bulletSpawnPos += bulletDirection * 0.5f;
+            
+            GameObject proj = Instantiate(gunData.projectilePrefab, bulletSpawnPos, Quaternion.LookRotation(bulletDirection));
             Rigidbody rb = proj.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.linearVelocity = shootDirection * gunData.projectileSpeed;
+                rb.linearVelocity = bulletDirection * gunData.projectileSpeed;
             }
             else
             {
@@ -123,7 +130,7 @@ public class GunController : MonoBehaviour
                 rb = proj.AddComponent<Rigidbody>();
                 rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 rb.useGravity = false;
-                rb.linearVelocity = shootDirection * gunData.projectileSpeed;
+                rb.linearVelocity = bulletDirection * gunData.projectileSpeed;
             }
 
             Destroy(proj, gunData.projectileLifetime);
@@ -135,6 +142,14 @@ public class GunController : MonoBehaviour
             if (Physics.Raycast(shootOrigin, shootDirection, out hit, gunData.range))
             {
                 Debug.Log($"Hit: {hit.transform.name} at distance {hit.distance}");
+
+                // DAMAGE ENEMY IF HIT
+                Enemy enemy = hit.collider.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    enemy.TakeDamage(gunData.damage);
+                    Debug.Log($"Damaged enemy for {gunData.damage} damage!");
+                }
 
                 // Spawn impact effect
                 if (impactEffect != null)
