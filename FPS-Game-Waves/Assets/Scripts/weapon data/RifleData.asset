@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f8888e499402f7429cc064ebe21c8eb, type: 3}
   m_Name: RifleData
   m_EditorClassIdentifier: Assembly-CSharp::GunData
-  range: 100
-  fireRate: 10
+  damage: 25
+  range: 200
+  fireRate: 5
   maxAmmo: 30
   reloadTime: 1.5
   recoilAmount: 0.5
   recoilRecoverySpeed: 5
   muzzleFlash: {fileID: 0}
-  shootSound: {fileID: 0}
-  reloadSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: ccf3da700a48211a69a9bcdc2d061c64, type: 3}
+  reloadSound: {fileID: 8300000, guid: 7095d43d31319b4e6aa3dc1c386a8902, type: 3}
   emptySound: {fileID: 0}
-  projectilePrefab: {fileID: 100002, guid: 1dc2a27ad3a63d24bad7f1c6d159013e, type: 3}
-  projectileSpeed: 50
-  projectileLifetime: 0.5
+  projectilePrefab: {fileID: 5492099528205018072, guid: 5d6698c19e8ced6c384ce7850dd850a1, type: 3}
+  projectileSpeed: 20
+  projectileLifetime: 2

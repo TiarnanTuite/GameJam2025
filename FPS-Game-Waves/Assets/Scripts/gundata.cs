@@ -4,6 +4,7 @@ using UnityEngine;
 public class GunData  : ScriptableObject
 {
     [Header("Stats")]
+    public int damage = 25;
     public float range = 100f;
     public float fireRate = 10f;
     public int maxAmmo = 30;
