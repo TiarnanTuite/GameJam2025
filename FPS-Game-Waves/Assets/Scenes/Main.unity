@@ -5326,6 +5326,82 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1589722716}
   m_CullTransparentMesh: 1
+--- !u!1 &1640670033
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1640670035}
+  - component: {fileID: 1640670034}
+  m_Layer: 0
+  m_Name: FloorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1640670034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1640670033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f191e099d343e64448469e425287200a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloorManager
+  hudController: {fileID: 1229436615}
+  floors:
+  - floorName: Top Floor
+    killsRequired: 0
+    floorObject: {fileID: 0}
+    blockedDoor: {fileID: 0}
+    weaponPickups: []
+    isUnlocked: 0
+  - floorName: Floor 2
+    killsRequired: 5
+    floorObject: {fileID: 0}
+    blockedDoor: {fileID: 0}
+    weaponPickups: []
+    isUnlocked: 1
+  - floorName: Floor 3
+    killsRequired: 10
+    floorObject: {fileID: 0}
+    blockedDoor: {fileID: 0}
+    weaponPickups: []
+    isUnlocked: 1
+  - floorName: Floor 4
+    killsRequired: 15
+    floorObject: {fileID: 0}
+    blockedDoor: {fileID: 0}
+    weaponPickups: []
+    isUnlocked: 1
+  - floorName: Bottom Floor
+    killsRequired: 20
+    floorObject: {fileID: 0}
+    blockedDoor: {fileID: 0}
+    weaponPickups: []
+    isUnlocked: 1
+--- !u!4 &1640670035
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1640670033}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 396.23438, y: 288.32187, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1677814572 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4767400413853537203, guid: ed3baa9141d76d443afd001beafa1c82, type: 3}
@@ -7210,3 +7286,4 @@ SceneRoots:
   - {fileID: 496506546}
   - {fileID: 1229436616}
   - {fileID: 245009606}
+  - {fileID: 1640670035}
