@@ -21,10 +21,22 @@ public class HUDController : MonoBehaviour
     [Header("Weapon UI")]
     public TextMeshProUGUI weaponNameText;
 
+    [Header("Kill Counter")]
+    public TextMeshProUGUI killCountText;
+    public TextMeshProUGUI floorUnlockText;
+
     [Header("Colors")]
     public Color normalAmmoColor = Color.cyan;
     public Color lowAmmoColor = Color.red;
     public int lowAmmoThreshold = 5;
+
+    private int currentKills = 0;
+
+    void Start()
+    {
+        if (floorUnlockText != null)
+            floorUnlockText.gameObject.SetActive(false);
+    }
 
     void Update()
     {
@@ -67,6 +79,8 @@ public class HUDController : MonoBehaviour
             float fillAmount = (float)currentAmmo / maxAmmo;
             ammoBar.fillAmount = fillAmount;
 
+            Debug.Log($"Ammo Bar Fill: {fillAmount} ({currentAmmo}/{maxAmmo})");
+
             // Change bar color if low
             if (currentAmmo <= lowAmmoThreshold && !isReloading)
             {
@@ -76,6 +90,10 @@ public class HUDController : MonoBehaviour
             {
                 ammoBar.color = normalAmmoColor;
             }
+        }
+        else
+        {
+            Debug.LogWarning("Ammo Bar is not assigned in HUDController!");
         }
 
         // Show/hide reloading indicator
@@ -111,6 +129,43 @@ public class HUDController : MonoBehaviour
         if (weaponNameText != null)
         {
             weaponNameText.text = weaponName;
+        }
+    }
+
+    public void AddKill()
+    {
+        currentKills++;
+        UpdateKillCount();
+    }
+
+    void UpdateKillCount()
+    {
+        if (killCountText != null)
+        {
+            killCountText.text = currentKills.ToString();
+        }
+    }
+
+    public int GetKillCount()
+    {
+        return currentKills;
+    }
+
+    public void ShowFloorUnlock(string message)
+    {
+        if (floorUnlockText != null)
+        {
+            floorUnlockText.text = message;
+            floorUnlockText.gameObject.SetActive(true);
+            Invoke(nameof(HideFloorUnlock), 3f);
+        }
+    }
+
+    void HideFloorUnlock()
+    {
+        if (floorUnlockText != null)
+        {
+            floorUnlockText.gameObject.SetActive(false);
         }
     }
 }
