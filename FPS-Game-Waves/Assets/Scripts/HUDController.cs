@@ -12,7 +12,6 @@ public class HUDController : MonoBehaviour
     public TextMeshProUGUI maxAmmoText;
     public Image ammoBar;
     public GameObject reloadingPanel;
-    public TextMeshProUGUI reloadingText;
 
     [Header("Health UI")]
     public TextMeshProUGUI healthText;
@@ -32,10 +31,22 @@ public class HUDController : MonoBehaviour
 
     private int currentKills = 0;
 
-    void Start()
+    void Awake()
     {
         if (floorUnlockText != null)
             floorUnlockText.gameObject.SetActive(false);
+
+        if (healthBar != null)
+        {
+            healthBar.fillAmount = 1f;
+            healthBar.color = Color.green;
+        }
+
+        if (ammoBar != null)
+        {
+            ammoBar.fillAmount = 1f;
+            ammoBar.color = normalAmmoColor;
+        }
     }
 
     void Update()
@@ -52,20 +63,10 @@ public class HUDController : MonoBehaviour
         int maxAmmo = gunController.GetMaxAmmo();
         bool isReloading = gunController.IsReloading();
 
-        // Update ammo text
         if (ammoText != null)
         {
             ammoText.text = currentAmmo.ToString();
-
-            // Change color if low ammo
-            if (currentAmmo <= lowAmmoThreshold && !isReloading)
-            {
-                ammoText.color = lowAmmoColor;
-            }
-            else
-            {
-                ammoText.color = normalAmmoColor;
-            }
+            ammoText.color = (currentAmmo <= lowAmmoThreshold && !isReloading) ? lowAmmoColor : normalAmmoColor;
         }
 
         if (maxAmmoText != null)
@@ -73,30 +74,12 @@ public class HUDController : MonoBehaviour
             maxAmmoText.text = "/ " + maxAmmo.ToString();
         }
 
-        // Update ammo bar
         if (ammoBar != null)
         {
-            float fillAmount = (float)currentAmmo / maxAmmo;
-            ammoBar.fillAmount = fillAmount;
-
-            Debug.Log($"Ammo Bar Fill: {fillAmount} ({currentAmmo}/{maxAmmo})");
-
-            // Change bar color if low
-            if (currentAmmo <= lowAmmoThreshold && !isReloading)
-            {
-                ammoBar.color = lowAmmoColor;
-            }
-            else
-            {
-                ammoBar.color = normalAmmoColor;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Ammo Bar is not assigned in HUDController!");
+            ammoBar.fillAmount = (float)currentAmmo / maxAmmo;
+            ammoBar.color = (currentAmmo <= lowAmmoThreshold && !isReloading) ? lowAmmoColor : normalAmmoColor;
         }
 
-        // Show/hide reloading indicator
         if (reloadingPanel != null)
         {
             reloadingPanel.SetActive(isReloading);
@@ -112,12 +95,12 @@ public class HUDController : MonoBehaviour
 
         if (healthBar != null)
         {
-            healthBar.fillAmount = currentHealth / maxHealth;
+            float fillAmount = currentHealth / maxHealth;
+            healthBar.fillAmount = fillAmount;
 
-            // Change color based on health
-            if (currentHealth > 60)
+            if (fillAmount > 0.6f)
                 healthBar.color = Color.green;
-            else if (currentHealth > 30)
+            else if (fillAmount > 0.3f)
                 healthBar.color = Color.yellow;
             else
                 healthBar.color = Color.red;
@@ -135,21 +118,13 @@ public class HUDController : MonoBehaviour
     public void AddKill()
     {
         currentKills++;
-        UpdateKillCount();
-    }
-
-    void UpdateKillCount()
-    {
         if (killCountText != null)
         {
             killCountText.text = currentKills.ToString();
         }
     }
 
-    public int GetKillCount()
-    {
-        return currentKills;
-    }
+    public int GetKillCount() => currentKills;
 
     public void ShowFloorUnlock(string message)
     {

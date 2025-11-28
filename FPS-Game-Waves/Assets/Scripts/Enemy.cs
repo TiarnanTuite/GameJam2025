@@ -21,10 +21,10 @@ public class Enemy : MonoBehaviour
     private int currentHealth;
     private float lastAttackTime;
     private bool isDead = false;
+    private PlayerHealth playerHealth; // Cache this
 
     void Start()
     {
-        // Find player by tag if not assigned in inspector
         if (player == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -32,10 +32,18 @@ public class Enemy : MonoBehaviour
             {
                 player = playerObj.transform;
             }
-            else
-            {
-                Debug.LogWarning("Player not found! Make sure player has 'Player' tag or assign in inspector.");
-            }
+        }
+
+        // Find and cache PlayerHealth once
+        if (player != null)
+        {
+            playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth == null)
+                playerHealth = player.GetComponentInParent<PlayerHealth>();
+            if (playerHealth == null)
+                playerHealth = player.GetComponentInChildren<PlayerHealth>();
+            if (playerHealth == null)
+                playerHealth = FindFirstObjectByType<PlayerHealth>();
         }
 
         currentHealth = maxHealth;
@@ -47,7 +55,6 @@ public class Enemy : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // Only follow if player is within detection range
         if (distanceToPlayer <= detectionRange)
         {
             FollowPlayer(distanceToPlayer);
@@ -56,19 +63,16 @@ public class Enemy : MonoBehaviour
 
     void FollowPlayer(float distance)
     {
-        // Move towards player if outside stopping distance
         if (distance > stoppingDistance)
         {
             Vector3 direction = (player.position - transform.position).normalized;
             transform.position += direction * moveSpeed * Time.deltaTime;
 
-            // Rotate to face player
             Quaternion lookRotation = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
         }
         else
         {
-            // Attack player when in range
             TryAttack();
         }
     }
@@ -84,8 +88,10 @@ public class Enemy : MonoBehaviour
 
     void AttackPlayer()
     {
-        // Add attack animation trigger here if you have animations
-        Debug.Log("Enemy attacked player!");
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(damage);
+        }
     }
 
     public void TakeDamage(int damageAmount)
@@ -93,7 +99,6 @@ public class Enemy : MonoBehaviour
         if (isDead) return;
 
         currentHealth -= damageAmount;
-        Debug.Log($"Enemy took {damageAmount} damage. Health: {currentHealth}/{maxHealth}");
 
         if (currentHealth <= 0)
         {
@@ -104,34 +109,28 @@ public class Enemy : MonoBehaviour
     void Die()
     {
         isDead = true;
-        Debug.Log("Enemy died!");
 
-        // Notify HUD about kill
-        HUDController hud = FindObjectOfType<HUDController>();
+        HUDController hud = FindFirstObjectByType<HUDController>();
         if (hud != null)
         {
             hud.AddKill();
         }
 
-        // Notify wave spawner
-        WaveSpawner spawner = FindObjectOfType<WaveSpawner>();
+        WaveSpawner spawner = FindFirstObjectByType<WaveSpawner>();
         if (spawner != null)
         {
             spawner.OnEnemyKilled();
         }
 
-        // Notify floor manager
-        FloorManager floorManager = FindObjectOfType<FloorManager>();
+        FloorManager floorManager = FindFirstObjectByType<FloorManager>();
         if (floorManager != null)
         {
             floorManager.OnEnemyKilled();
         }
 
-        // Add death effects, animations, etc. here
         Destroy(gameObject, 0.1f);
     }
 
-    // Visualize detection range in editor
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
