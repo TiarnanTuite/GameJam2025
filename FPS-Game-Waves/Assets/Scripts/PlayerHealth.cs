@@ -60,7 +60,11 @@ public class PlayerHealth : MonoBehaviour
     void Die()
     {
         isDead = true;
-        // Add death logic here: respawn, game over, etc.
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ShowDeathScreen();
+        }
     }
 
     public float GetCurrentHealth() => currentHealth;
