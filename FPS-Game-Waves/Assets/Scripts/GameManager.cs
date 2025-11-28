@@ -20,7 +20,6 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
@@ -31,11 +30,56 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        // Subscribe to scene loaded event
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    void Start()
+    void OnDestroy()
     {
-        // Initialize UI states
+        // Unsubscribe when destroyed
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Re-find UI references after scene loads
+        FindUIReferences();
+
+        // Initialize based on scene
+        if (scene.name == gameSceneName)
+        {
+            InitializeGameScene();
+        }
+        else if (scene.name == mainMenuSceneName)
+        {
+            InitializeMainMenu();
+        }
+    }
+
+    void FindUIReferences()
+    {
+        // Try to find UI elements by name
+        GameObject canvas = GameObject.Find("Canvas");
+
+        if (canvas != null)
+        {
+            Transform pauseTransform = canvas.transform.Find("PauseMenu");
+            if (pauseTransform != null) pauseMenu = pauseTransform.gameObject;
+
+            Transform deathTransform = canvas.transform.Find("DeathScreen");
+            if (deathTransform != null) deathScreen = deathTransform.gameObject;
+
+            Transform hudTransform = canvas.transform.Find("GameHUD");
+            if (hudTransform != null) gameHUD = hudTransform.gameObject;
+        }
+    }
+
+    void InitializeGameScene()
+    {
+        isDead = false;
+        isPaused = false;
+
         if (pauseMenu != null) pauseMenu.SetActive(false);
         if (deathScreen != null) deathScreen.SetActive(false);
         if (gameHUD != null) gameHUD.SetActive(true);
@@ -43,9 +87,21 @@ public class GameManager : MonoBehaviour
         ResumeGame();
     }
 
+    void InitializeMainMenu()
+    {
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void Start()
+    {
+        FindUIReferences();
+        InitializeGameScene();
+    }
+
     void Update()
     {
-        // Press ESC to pause/unpause
         var keyboard = Keyboard.current;
         if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && !isDead)
         {
@@ -64,7 +120,6 @@ public class GameManager : MonoBehaviour
         if (pauseMenu != null) pauseMenu.SetActive(true);
         if (gameHUD != null) gameHUD.SetActive(false);
 
-        // Unlock cursor for menu
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -77,7 +132,6 @@ public class GameManager : MonoBehaviour
         if (pauseMenu != null) pauseMenu.SetActive(false);
         if (gameHUD != null) gameHUD.SetActive(true);
 
-        // Lock cursor for gameplay
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
