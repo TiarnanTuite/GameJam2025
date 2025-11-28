@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,10 +14,11 @@ public class GameManager : MonoBehaviour
 
     [Header("Settings")]
     public string mainMenuSceneName = "MainMenu";
-    public string gameSceneName = "Game";
+    public string gameSceneName = "Main";
 
     private bool isPaused = false;
     private bool isDead = false;
+    private GameObject playerObject;
 
     void Awake()
     {
@@ -31,22 +33,19 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Subscribe to scene loaded event
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void OnDestroy()
     {
-        // Unsubscribe when destroyed
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Re-find UI references after scene loads
         FindUIReferences();
+        FindPlayer();
 
-        // Initialize based on scene
         if (scene.name == gameSceneName)
         {
             InitializeGameScene();
@@ -59,7 +58,6 @@ public class GameManager : MonoBehaviour
 
     void FindUIReferences()
     {
-        // Try to find UI elements by name
         GameObject canvas = GameObject.Find("Canvas");
 
         if (canvas != null)
@@ -73,6 +71,72 @@ public class GameManager : MonoBehaviour
             Transform hudTransform = canvas.transform.Find("GameHUD");
             if (hudTransform != null) gameHUD = hudTransform.gameObject;
         }
+
+        // Reconnect buttons after scene load
+        ReconnectButtons();
+    }
+
+    void ReconnectButtons()
+    {
+        // Reconnect Pause Menu buttons
+        if (pauseMenu != null)
+        {
+            ConnectButton(pauseMenu, "ResumeButton", ResumeGame);
+            ConnectButton(pauseMenu, "RestartButton", RestartGame);
+            ConnectButton(pauseMenu, "MainMenuButton", LoadMainMenu);
+            ConnectButton(pauseMenu, "QuitButton", QuitGame);
+        }
+
+        // Reconnect Death Screen buttons
+        if (deathScreen != null)
+        {
+            ConnectButton(deathScreen, "RestartButton", RestartGame);
+            ConnectButton(deathScreen, "MainMenuButton", LoadMainMenu);
+            ConnectButton(deathScreen, "QuitButton", QuitGame);
+        }
+    }
+
+    void ConnectButton(GameObject parent, string buttonName, UnityEngine.Events.UnityAction action)
+    {
+        Transform buttonTransform = parent.transform.Find(buttonName);
+        if (buttonTransform != null)
+        {
+            UnityEngine.UI.Button button = buttonTransform.GetComponent<UnityEngine.UI.Button>();
+            if (button != null)
+            {
+                // Clear existing listeners and add new one
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(action);
+            }
+        }
+    }
+
+    void FindPlayer()
+    {
+        playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+        {
+            Debug.Log("Found Player");
+        }
+        else
+        {
+            Debug.LogError("Player with 'Player' tag not found!");
+        }
+    }
+
+    void SetPlayerEnabled(bool enabled)
+    {
+        if (playerObject != null)
+        {
+            MonoBehaviour[] scripts = playerObject.GetComponentsInChildren<MonoBehaviour>();
+            foreach (var script in scripts)
+            {
+                if (script is PlayerHealth || script is HUDController)
+                    continue;
+
+                script.enabled = enabled;
+            }
+        }
     }
 
     void InitializeGameScene()
@@ -85,6 +149,19 @@ public class GameManager : MonoBehaviour
         if (gameHUD != null) gameHUD.SetActive(true);
 
         ResumeGame();
+
+        StartCoroutine(DelayedHealthUpdate());
+    }
+
+    System.Collections.IEnumerator DelayedHealthUpdate()
+    {
+        yield return new WaitForSeconds(0.1f);
+        PlayerHealth playerHealth = FindFirstObjectByType<PlayerHealth>();
+        HUDController hud = FindFirstObjectByType<HUDController>();
+        if (playerHealth != null && hud != null)
+        {
+            hud.UpdateHealth(playerHealth.GetCurrentHealth(), playerHealth.GetMaxHealth());
+        }
     }
 
     void InitializeMainMenu()
@@ -97,6 +174,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         FindUIReferences();
+        FindPlayer();
         InitializeGameScene();
     }
 
@@ -120,6 +198,8 @@ public class GameManager : MonoBehaviour
         if (pauseMenu != null) pauseMenu.SetActive(true);
         if (gameHUD != null) gameHUD.SetActive(false);
 
+        SetPlayerEnabled(false);
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -132,6 +212,8 @@ public class GameManager : MonoBehaviour
         if (pauseMenu != null) pauseMenu.SetActive(false);
         if (gameHUD != null) gameHUD.SetActive(true);
 
+        SetPlayerEnabled(true);
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -141,11 +223,43 @@ public class GameManager : MonoBehaviour
         isDead = true;
         Time.timeScale = 0f;
 
-        if (deathScreen != null) deathScreen.SetActive(true);
+        if (deathScreen != null)
+        {
+            deathScreen.SetActive(true);
+            UpdateDeathStats();
+        }
+
         if (gameHUD != null) gameHUD.SetActive(false);
+
+        SetPlayerEnabled(false);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+    }
+
+    void UpdateDeathStats()
+    {
+        if (deathScreen != null)
+        {
+            Transform statsTransform = deathScreen.transform.Find("StatsText");
+            if (statsTransform != null)
+            {
+                TextMeshProUGUI statsText = statsTransform.GetComponent<TextMeshProUGUI>();
+                if (statsText != null)
+                {
+                    HUDController hud = FindFirstObjectByType<HUDController>();
+                    if (hud != null)
+                    {
+                        int kills = hud.GetKillCount();
+                        statsText.text = $"ENEMIES ELIMINATED: {kills}";
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("StatsText not found on DeathScreen!");
+            }
+        }
     }
 
     public void RestartGame()
@@ -169,7 +283,7 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+        Application.Quit();
 #endif
     }
 
