@@ -24,5 +24,5 @@ MonoBehaviour:
   reloadSound: {fileID: 8300000, guid: 7095d43d31319b4e6aa3dc1c386a8902, type: 3}
   emptySound: {fileID: 0}
   projectilePrefab: {fileID: 5492099528205018072, guid: 5d6698c19e8ced6c384ce7850dd850a1, type: 3}
-  projectileSpeed: 20
+  projectileSpeed: 80
   projectileLifetime: 2

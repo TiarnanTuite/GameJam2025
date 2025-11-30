@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using System.Collections;
 
@@ -13,13 +14,20 @@ public class WaveSpawner : MonoBehaviour
     [SerializeField] private int currentWave = 0;
     [SerializeField] private bool autoStartWaves = true;
     [SerializeField] private float enemyIncreasePerWave = 2f;
-    
+
+    [Header("UI References")]
+    [SerializeField] private TextMeshProUGUI waveCountText;
+
+    private Transform waveSpawner;
     private Transform[] spawnMarkers;
     private int enemiesAlive = 0;
     private bool isSpawning = false;
     
     void Start()
     {
+        // Get wave spawner
+        waveSpawner = this.gameObject.transform;
+
         // Get all child transforms as spawn markers
         spawnMarkers = new Transform[transform.childCount];
         for (int i = 0; i < transform.childCount; i++)
@@ -56,10 +64,27 @@ public class WaveSpawner : MonoBehaviour
         if (isSpawning) return;
         
         currentWave++;
+        
+        // Lower the spawner after wave 1
+        if (currentWave > 1)
+        {
+            waveSpawner.position = new Vector3(
+                waveSpawner.position.x, 
+                waveSpawner.position.y - 5, 
+                waveSpawner.position.z
+            );
+        }
+        
         int enemiesToSpawn = enemiesPerWave + Mathf.RoundToInt((currentWave - 1) * enemyIncreasePerWave);
         
         Debug.Log($"Starting Wave {currentWave} with {enemiesToSpawn} enemies");
         StartCoroutine(SpawnWave(enemiesToSpawn));
+
+        // Update UI
+        if (waveCountText != null)
+        {
+            waveCountText.text = currentWave.ToString();
+        }
     }
     
     IEnumerator SpawnWave(int enemyCount)
