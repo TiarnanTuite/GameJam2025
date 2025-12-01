@@ -1,21 +1,22 @@
 using UnityEngine;
+using UnityEngine.InputSystem; // ADD THIS LINE
 
 public class PlayerInteract : MonoBehaviour
 {
-    public Camera playerCamera; // assign the FPS camera
+    public Camera playerCamera;
     public float interactRange = 3f;
-    public LayerMask interactMask = ~0; // default all
-    public KeyCode interactKey = KeyCode.E;
+    public LayerMask interactMask = ~0;
 
     void Reset()
     {
-        // try to auto-find a Camera on player
         playerCamera = GetComponentInChildren<Camera>();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(interactKey))
+        // NEW INPUT SYSTEM
+        var keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
         {
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactMask))

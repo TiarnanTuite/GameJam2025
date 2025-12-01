@@ -14,27 +14,34 @@ public class WaveSpawner : MonoBehaviour
     [SerializeField] private int currentWave = 0;
     [SerializeField] private bool autoStartWaves = true;
     [SerializeField] private float enemyIncreasePerWave = 2f;
-    [SerializeField] private bool continuousSpawning = true; // NEW: Spawn until kill target
-    [SerializeField] private float continuousSpawnDelay = 3f; // Time between continuous spawns
+    [SerializeField] private bool continuousSpawning = true;
+    [SerializeField] private float continuousSpawnDelay = 3f;
 
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI waveCountText;
     [SerializeField] private TextMeshProUGUI waveInfoText;
 
     [Header("Floor Unlock Messages")]
-    [SerializeField] private int[] floorUnlockWaves = new int[] { 2, 4, 6, 8 }; // Which waves unlock floors
+    [SerializeField] private FloorManager floorManager; // Reference to check actual floor unlocks
 
     private Transform waveSpawner;
     private Transform[] spawnMarkers;
     private int enemiesAlive = 0;
-    private int killsThisWave = 0; // NEW: Track kills per wave
-    private int killsNeededThisWave = 0; // NEW: Kill target
+    private int killsThisWave = 0;
+    private int killsNeededThisWave = 0;
     private bool isSpawning = false;
-    private bool waveActive = false; // NEW: Is wave currently running
+    private bool waveActive = false;
+    private int lastCheckedFloorIndex = 0; // Track which floor was last unlocked
 
     void Start()
     {
         waveSpawner = this.gameObject.transform;
+
+        // Auto-find FloorManager if not assigned
+        if (floorManager == null)
+        {
+            floorManager = FindFirstObjectByType<FloorManager>();
+        }
 
         // Get all child transforms as spawn markers
         spawnMarkers = new Transform[transform.childCount];
@@ -99,8 +106,10 @@ public class WaveSpawner : MonoBehaviour
                 yield return new WaitForSeconds(3f);
                 timeUsed += 3f;
 
-                // Check if this wave unlocked a floor
-                if (System.Array.IndexOf(floorUnlockWaves, currentWave) >= 0)
+                // Check if a new floor was unlocked during this wave
+                bool floorUnlocked = CheckForNewFloorUnlock();
+
+                if (floorUnlocked)
                 {
                     waveInfoText.text = "NEW FLOOR UNLOCKED!\nFind Better Weapons Before Next Wave";
                     waveInfoText.color = Color.cyan;
@@ -134,6 +143,22 @@ public class WaveSpawner : MonoBehaviour
         yield return StartCoroutine(ShowCountdown());
 
         StartWave();
+    }
+
+    bool CheckForNewFloorUnlock()
+    {
+        if (floorManager == null) return false;
+
+        // Check if any floor index higher than lastCheckedFloorIndex is now unlocked
+        for (int i = lastCheckedFloorIndex + 1; i < floorManager.floors.Count; i++)
+        {
+            if (floorManager.floors[i].isUnlocked)
+            {
+                lastCheckedFloorIndex = i;
+                return true;
+            }
+        }
+        return false;
     }
 
     IEnumerator ShowCountdown()

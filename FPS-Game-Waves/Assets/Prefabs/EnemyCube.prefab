@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 4554920651121605132}
   m_Layer: 8
   m_Name: EnemyCube
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -132,9 +132,9 @@ MonoBehaviour:
   rotationSpeed: 5
   stoppingDistance: 2
   maxHealth: 100
-  damage: 10
+  damage: 5
   attackCooldown: 1.5
-  detectionRange: 100
+  detectionRange: 200
   player: {fileID: 0}
 --- !u!108 &7692371958017175658
 Light:

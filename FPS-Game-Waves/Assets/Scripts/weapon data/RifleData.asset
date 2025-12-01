@@ -25,4 +25,4 @@ MonoBehaviour:
   emptySound: {fileID: 0}
   projectilePrefab: {fileID: 5492099528205018072, guid: 5d6698c19e8ced6c384ce7850dd850a1, type: 3}
   projectileSpeed: 80
-  projectileLifetime: 2
+  projectileLifetime: 3
