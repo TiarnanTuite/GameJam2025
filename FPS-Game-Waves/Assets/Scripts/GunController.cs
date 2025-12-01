@@ -69,7 +69,7 @@ public class GunController : MonoBehaviour
             else
             {
                 if (gunData.emptySound != null)
-                    audioSource.PlayOneShot(gunData.emptySound);
+                    audioSource.PlayOneShot(gunData.emptySound , 0.1f);
                 StartReload();
             }
         }
@@ -89,7 +89,7 @@ public class GunController : MonoBehaviour
 
         // Play effects
         if (gunData.shootSound != null)
-            audioSource.PlayOneShot(gunData.shootSound);
+            audioSource.PlayOneShot(gunData.shootSound, 0.1f);
 
         if (gunData.muzzleFlash != null)
             gunData.muzzleFlash.Play();
@@ -173,7 +173,7 @@ public class GunController : MonoBehaviour
         Debug.Log("Reloading...");
 
         if (gunData.reloadSound != null)
-            audioSource.PlayOneShot(gunData.reloadSound);
+            audioSource.PlayOneShot(gunData.reloadSound , 0.1f);
 
         Invoke(nameof(FinishReload), gunData.reloadTime);
     }

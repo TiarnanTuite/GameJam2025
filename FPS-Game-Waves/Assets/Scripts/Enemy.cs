@@ -131,6 +131,14 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject, 0.1f);
     }
 
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Water"))
+        {
+            Die();
+        }
+    }
+
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
